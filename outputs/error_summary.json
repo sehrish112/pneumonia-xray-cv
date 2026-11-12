@@ -1,0 +1,11 @@
+{
+  "threshold_0.5": {
+    "false_negatives": 7,
+    "false_positives": 20
+  },
+  "first_threshold_with_99pct_sensitivity": {
+    "threshold": 0.15816298127174377,
+    "sensitivity": 0.9923076923076923,
+    "specificity": 0.8760683760683761
+  }
+}
