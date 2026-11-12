@@ -1,5 +1,7 @@
 # Model Card: Chest X-ray Pneumonia Classifier
 
+**Author:** Sehrish Masood
+
 ## Model
 - ResNet18 (ImageNet-pretrained), final layer replaced by one logit (probability of pneumonia).
 - Input: grayscale chest X-ray resized to 64x64, replicated to 3 channels, normalised to [-1, 1].
@@ -36,7 +38,11 @@ At a threshold of about 0.16, sensitivity is 99.2% and specificity 87.6%.
 ## Known limitations
 - One official data split. External validation on ChestMNIST (NIH ChestX-ray14, adults,
   pneumonia vs no finding, 12,170 images) gave AUC 0.67, sensitivity 0.65 and specificity 0.57
-  at threshold 0.5, so the model does not generalise beyond its training distribution.
+  at threshold 0.5, so the model does not generalise beyond its training distribution
+  (mean external AUC over 5 seeds: 0.678, std 0.012). Fine-tuning on 1,956 in-domain images
+  raised it only to 0.754.
+- The demo shows an "unfamiliar image" warning based on feature distance to the training images
+  (flags 2.6% of internal test images and 49.6% of an external sample). It is an indicator, not a guarantee.
 - Validation AUC was about 0.99 from the first epoch, so it discriminates poorly between epochs.
 - Predictions are saturated near 0 and 1 (over-confident); no calibration applied.
 - Grad-CAM maps are coarse at this resolution and are not evidence of clinical reasoning.

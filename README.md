@@ -6,9 +6,14 @@ carefully: held-out test set, threshold analysis, calibration, error analysis an
 The goal was to learn the full workflow of a vision project, including its limits, not to
 chase a leaderboard score.
 
+**Author:** Sehrish Masood
+
 > Research/learning project on a public benchmark. **Not a medical device.**
->
-> AI coding assistance (Claude) was used while building this project.
+
+![Demo: classifier tab](docs/demo_pneumonia.png)
+
+More screenshots: [normal image](docs/demo_normal.png), [unfamiliar-image warning](docs/demo_unfamiliar_image_warning.png),
+[about tab](docs/demo_about.png), [API docs](docs/api_docs.png).
 
 ## Pipeline
 | Step | Script | Output |
@@ -17,6 +22,9 @@ chase a leaderboard score.
 | Test-set evaluation + Grad-CAM | `src/evaluate.py` | `metrics.json`, `roc.png`, `confusion_matrix.png`, `gradcam.png` |
 | Error analysis, threshold sweep, calibration | `src/error_analysis.py` | `error_summary.json`, `threshold_sweep.png`, `calibration.png`, `errors_*.png` |
 | External validation on another dataset | `src/external_validation.py` | `external_validation.json`, `external_roc.png` |
+| Unfamiliar-image (out-of-distribution) detector | `src/ood.py` | `ood_stats.npz`, `ood_report.json` |
+| Fine-tune on external data (experiment) | `src/finetune_external.py` | `finetune_external.json` |
+| Example gallery for the demo | `src/make_examples.py` | `docs/examples/` |
 | Combine several runs (mean, std, bootstrap CI) | `src/aggregate.py` | `results_summary.json` |
 | Shared inference code | `src/inference.py` | used by API and demo |
 | REST API (FastAPI) | `src/api.py` | `/health`, `/predict`, `/predict/gradcam` |
@@ -113,9 +121,24 @@ Performance drops sharply: the model flags 43% of the "no finding" and pneumonia
 pneumonia. So the high internal numbers do not carry over to a different population. Likely
 reasons (not tested separately): children vs adults, a different source and scanner, much
 lower pneumonia prevalence (2% here), 64x64 resolution, and noisier labels (NIH labels were
-extracted automatically from reports). I did not try to fix this, for example by fine-tuning
-on the new data. The honest conclusion is that this model works on its own benchmark and
-should not be expected to work elsewhere.
+extracted automatically from reports). The honest conclusion is that this model works on its
+own benchmark and should not be expected to work elsewhere.
+
+**Follow-up experiments on the external gap**
+
+- *Is it a lucky seed?* No. External AUC for the five seeds: 0.670, 0.674, 0.699, 0.669, 0.677
+  (mean 0.678, std 0.012). At threshold 0.5 the precision is only about 3% because pneumonia is
+  about 2% of the external images, so almost every alarm would be false.
+- *Fine-tuning on in-domain data* (`src/finetune_external.py`): fine-tuning for 3 epochs on 1,956
+  ChestMNIST *train* images (978 pneumonia + 978 no finding) raised external test AUC from
+  0.670 to 0.754. The gap closes only partly, which points to label noise, the 64x64
+  resolution and the model/data limits and not only to the population change. I did not test
+  which factor matters most.
+- *Detecting unfamiliar images* (`src/ood.py`): a Mahalanobis-distance detector on the
+  network's features, fitted on the training images. It flags 2.6% of the internal test images
+  but 49.6% of a 2,000-image external sample, and separates internal from external images with
+  AUC 0.935. The demo uses it to show an "unfamiliar image" warning. It is a useful signal but
+  it does not make the prediction on such images correct.
 
 ## Limitations
 - Low-resolution benchmark images, not clinical-quality data.
@@ -131,11 +154,11 @@ should not be expected to work elsewhere.
 - Grad-CAM is a visual aid only.
 
 ## Possible next steps
-- Train on a mix of sources or fine-tune on part of the external data and see how much of
-  the gap closes; try stronger augmentation and higher resolution.
-- Compare from-scratch vs. pretrained and 64 / 128 / 224 px resolution.
+- Train on a mix of sources from the start, with stronger augmentation and higher resolution
+  (128 / 224 px), and test which factor closes the external gap.
+- Compare from-scratch vs. pretrained.
 - Apply temperature scaling for calibration.
-- Add out-of-distribution detection so the demo can warn about images unlike the training data.
+- Evaluate the unfamiliar-image detector on more kinds of images (photos, other modalities).
 
 ## REST API
 ```

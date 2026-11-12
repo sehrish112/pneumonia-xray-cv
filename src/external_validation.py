@@ -61,6 +61,7 @@ def main():
         "auc": float(auc),
         "sensitivity_at_0.5": float(tp / (tp + fn)),
         "specificity_at_0.5": float(tn / (tn + fp)),
+        "precision_at_0.5": float(tp / max(tp + fp, 1)),
         "fraction_predicted_pneumonia_at_0.5": float(pred.mean()),
         "median_probability_no_finding": float(np.median(p[y == 0])),
         "median_probability_pneumonia": float(np.median(p[y == 1])),

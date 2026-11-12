@@ -7,3 +7,5 @@ __pycache__/
 outputs_seed*/
 run_seeds.log
 external_validation.log
+extras_done.txt
+finetune_external.log

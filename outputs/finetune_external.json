@@ -1,0 +1,7 @@
+{
+  "finetune_images": 1956,
+  "epochs": 3,
+  "external_auc_before": 0.6704493489864809,
+  "external_auc_after": 0.7542269803393363,
+  "note": "fine-tuned on the ChestMNIST train split, evaluated on its test split"
+}

@@ -6,6 +6,7 @@
   "auc": 0.6704493489864809,
   "sensitivity_at_0.5": 0.6487603305785123,
   "specificity_at_0.5": 0.5731891348088531,
+  "precision_at_0.5": 0.029916158536585365,
   "fraction_predicted_pneumonia_at_0.5": 0.4312243221035333,
   "median_probability_no_finding": 0.12368087470531464,
   "median_probability_pneumonia": 0.9914580583572388

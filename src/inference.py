@@ -9,6 +9,7 @@ from matplotlib import colormaps
 
 from model import build_model
 from evaluate import gradcam
+from ood import feature_extractor, mahalanobis
 
 MODEL_PATH = os.environ.get("MODEL_PATH", "outputs/best.pt")
 THRESHOLD = float(os.environ.get("THRESHOLD", "0.5"))
@@ -23,6 +24,16 @@ def get_model():
     m.load_state_dict(ck["model"])
     m.eval()
     return m, int(ck["size"])
+
+
+@lru_cache(maxsize=1)
+def get_ood():
+    # statistics of the training images, made by `python src/ood.py`
+    path = os.path.join(os.path.dirname(MODEL_PATH), "ood_stats.npz")
+    if not os.path.exists(path):
+        return None
+    z = np.load(path)
+    return z["mean"], z["precision"], float(z["threshold"])
 
 
 def preprocess(img: Image.Image, size: int):
@@ -43,6 +54,14 @@ def predict(img: Image.Image, with_cam=False):
         "threshold": THRESHOLD,
         "disclaimer": DISCLAIMER,
     }
+    ood = get_ood()
+    if ood is not None:
+        mean, precision, threshold = ood
+        with torch.no_grad():
+            feats = feature_extractor(model)(x).numpy()
+        ratio = float(mahalanobis(feats, mean, precision)[0] / threshold)
+        out["unfamiliar_image"] = ratio > 1.0
+        out["distance_ratio"] = round(ratio, 2)
     overlay = None
     if with_cam:
         cam = gradcam(model, x)[0]

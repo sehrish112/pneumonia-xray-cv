@@ -1,0 +1,8 @@
+{
+  "threshold_99th_percentile_of_training_distances": 16.436152508394546,
+  "fraction_flagged_internal_test": 0.02564102564102564,
+  "fraction_flagged_external_chestmnist_sample": 0.4955,
+  "auc_internal_vs_external": 0.9350344551282052,
+  "n_internal": 624,
+  "n_external": 2000
+}
