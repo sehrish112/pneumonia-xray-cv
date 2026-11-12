@@ -23,6 +23,8 @@ def predict(img):
         return None, None
     out, overlay = inference.predict(img, with_cam=True)
     p = out["probability_pneumonia"]
+    # the overlay is only 64x64, enlarge it so it is visible
+    overlay = overlay.resize((384, 384))
     return {"Pneumonia": p, "Normal": 1 - p}, overlay
 
 
@@ -46,6 +48,8 @@ with gr.Blocks(title="Chest X-ray Pneumonia Classifier") as demo:
         with gr.Column():
             out_label = gr.Label(label="Prediction")
             out_cam = gr.Image(label="Grad-CAM (where the model looks)")
+    # uploading your own image means the old ground-truth text no longer applies
+    inp.upload(lambda: "*Your own image: no ground truth label available.*", None, truth)
     run.click(predict, inp, [out_label, out_cam])
     rnd.click(random_example, None, [inp, truth]).then(predict, inp, [out_label, out_cam])
 

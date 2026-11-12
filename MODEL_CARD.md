@@ -34,7 +34,9 @@ specificity 0.899 +/- 0.018. Bootstrap 95% CI (seed 42): AUC [0.982, 0.995], spe
 At a threshold of about 0.16, sensitivity is 99.2% and specificity 87.6%.
 
 ## Known limitations
-- One official data split; no external validation on another dataset.
+- One official data split. External validation on ChestMNIST (NIH ChestX-ray14, adults,
+  pneumonia vs no finding, 12,170 images) gave AUC 0.67, sensitivity 0.65 and specificity 0.57
+  at threshold 0.5, so the model does not generalise beyond its training distribution.
 - Validation AUC was about 0.99 from the first epoch, so it discriminates poorly between epochs.
 - Predictions are saturated near 0 and 1 (over-confident); no calibration applied.
 - Grad-CAM maps are coarse at this resolution and are not evidence of clinical reasoning.

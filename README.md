@@ -16,6 +16,7 @@ chase a leaderboard score.
 | Train (augmentation, class-weighted loss, best epoch by validation AUC) | `src/train.py` | `outputs/best.pt`, `history.json` |
 | Test-set evaluation + Grad-CAM | `src/evaluate.py` | `metrics.json`, `roc.png`, `confusion_matrix.png`, `gradcam.png` |
 | Error analysis, threshold sweep, calibration | `src/error_analysis.py` | `error_summary.json`, `threshold_sweep.png`, `calibration.png`, `errors_*.png` |
+| External validation on another dataset | `src/external_validation.py` | `external_validation.json`, `external_roc.png` |
 | Combine several runs (mean, std, bootstrap CI) | `src/aggregate.py` | `results_summary.json` |
 | Shared inference code | `src/inference.py` | used by API and demo |
 | REST API (FastAPI) | `src/api.py` | `/health`, `/predict`, `/predict/gradcam` |
@@ -98,22 +99,43 @@ model found no evidence of pneumonia.
 distinct bins. There is mild over-confidence in the high-probability range (one bin predicts
 about 0.98 but has about 0.84 observed pneumonia). No calibration method was applied.
 
+**External validation (different dataset, no retraining).** I ran the seed-42 model on the
+ChestMNIST test set (NIH ChestX-ray14: adult patients, a different hospital), keeping images
+labelled pneumonia (242) or "no finding" (11,928) (`src/external_validation.py`):
+
+| Metric | Internal test | External (ChestMNIST) |
+|---|---|---|
+| AUC | 0.989 | 0.670 |
+| Sensitivity at 0.5 | 0.982 | 0.649 |
+| Specificity at 0.5 | 0.915 | 0.573 |
+
+Performance drops sharply: the model flags 43% of the "no finding" and pneumonia images as
+pneumonia. So the high internal numbers do not carry over to a different population. Likely
+reasons (not tested separately): children vs adults, a different source and scanner, much
+lower pneumonia prevalence (2% here), 64x64 resolution, and noisier labels (NIH labels were
+extracted automatically from reports). I did not try to fix this, for example by fine-tuning
+on the new data. The honest conclusion is that this model works on its own benchmark and
+should not be expected to work elsewhere.
+
 ## Limitations
 - Low-resolution benchmark images, not clinical-quality data.
-- Single official train/test split; no external validation on a different dataset
-  (multi-seed variation and bootstrap intervals are reported above).
+- Single official train/test split. External validation (above) shows the model does not
+  generalise to a different population (AUC 0.67); multi-seed variation and bootstrap
+  intervals are reported above for the internal test set only.
 - Validation AUC was already about 0.99 after the first epoch and stayed flat, so the
   validation set does little to discriminate between epochs; best-epoch selection is weak.
 - My test numbers are higher than the baseline figures I recall from the MedMNIST paper.
   I found no leakage in my pipeline (fixed official splits, model selected on validation only,
-  threshold not tuned on test), and results are consistent across 5 seeds, but I have not
-  validated on an external dataset, so I cannot say how well they generalise.
+  threshold not tuned on test), and results are consistent across 5 seeds. But they do not
+  hold up on an external dataset, so they mostly reflect this benchmark's data distribution.
 - Grad-CAM is a visual aid only.
 
 ## Possible next steps
-- Evaluate on a different chest X-ray dataset without retraining (external validation).
+- Train on a mix of sources or fine-tune on part of the external data and see how much of
+  the gap closes; try stronger augmentation and higher resolution.
 - Compare from-scratch vs. pretrained and 64 / 128 / 224 px resolution.
-- Apply temperature scaling for calibration; evaluate on a different chest X-ray dataset.
+- Apply temperature scaling for calibration.
+- Add out-of-distribution detection so the demo can warn about images unlike the training data.
 
 ## REST API
 ```
